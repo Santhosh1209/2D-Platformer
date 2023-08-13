@@ -2,23 +2,19 @@ import pygame
 from pygame.locals import *
 
 pygame.init() #initialising pygame
-screen_height = 500
-screen_width =  500
+screen_height = 1000
+screen_width =  1000
 
 screen = pygame.display.set_mode((screen_width,screen_height)) #displays blank pygame screen
 pygame.display.set_caption("2D Platformer")
 
 #defining game variables
-tile_size = 25
+tile_size = 50
 
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
 bg_img = pygame.image.load('img/sky.png')
 
-def draw_grid(): #used to draw a bunch of white lines on the screen with x,y co ordinates
-    for line in range(0,21):
-        pygame.draw.line(screen,(255,255,255),(0,line * tile_size),(screen_width,line * tile_size))
-        pygame.draw.line(screen,(255,255,255),(line * tile_size,0),(line * tile_size,screen_height))
 
 class World():
     def __init__(self,data): #constructor that takes the list as input 
@@ -57,7 +53,56 @@ class World():
             
     def draw(self):
         for tile in self.tile_list:
-            screen.blit(tile[0],tile[1])          
+            screen.blit(tile[0],tile[1]) 
+
+class Player():
+    def __init__(self,x,y):
+        img = pygame.image.load('img/guy1.png')
+        self.image = pygame.transform.scale(img,(40,80))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.vel_y = 0 #velocity of jumping in y direction 
+        self.jumped = False
+    
+    def update(self):
+        
+        #dy and dx denote the changes in the x and y co ordinates 
+        dx = 0
+        dy = 0
+        
+        #getting keypresses
+        key = pygame.key.get_pressed() #setting up connection with the keyboard
+        if key[pygame.K_SPACE] == True and self.jumped == False:
+            self.jumped = True
+            self.vel_y = -15 #-ve indicates that the characater would go UP the screen (y co ordinate)
+        if key[pygame.K_SPACE] == False:
+            self.jumped = False
+        if key[pygame.K_LEFT] == True:
+            dx -=5 #moves left, 5 pixels at a time
+        if key[pygame.K_RIGHT] == True:
+            dx +=5 #moves right, 5 pixels at a time
+        
+        #setting up the jumping limit -> adding gravity
+        self.vel_y +=1
+        if self.vel_y > 10:
+            self.vel_y = 10
+        dy += self.vel_y #more the player jumps, dy changes
+
+        #checking for collisions
+
+        #updating player co ordinates based on their movement 
+        self.rect.x += dx
+        self.rect.y += dy
+
+        #making sure the player stays on the screen
+        if self.rect.bottom > screen_height:
+            self.rect.bottom = screen_height
+            dy = 0
+
+        #loading player onto the screen
+        screen.blit(self.image,self.rect)
+
 
 
 world_data = [
@@ -84,6 +129,7 @@ world_data = [
 ]
 
 world = World(world_data)
+player = Player(100,screen_height-130)
 
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
@@ -93,7 +139,7 @@ while run == True:
     screen.blit(bg_img,(0,0)) # fills entire screen
     screen.blit(sun_img,(100,100)) # top left
     world.draw()
-    draw_grid()
+    player.update()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
