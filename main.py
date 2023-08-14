@@ -56,7 +56,9 @@ class World():
             
     def draw(self):
         for tile in self.tile_list:
-            screen.blit(tile[0],tile[1]) 
+            screen.blit(tile[0],tile[1])
+            pygame.draw.rect(screen,(255,255,255),tile[1],2) #displays all the rectangles with white colour (255,255,255) and thickness of 2
+
 
 class Player():
     def __init__(self,x,y):
@@ -74,6 +76,8 @@ class Player():
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
         self.vel_y = 0 #velocity of jumping in y direction 
         self.jumped = False
         self.direction = 0 #used to check if the player faces left/right 
@@ -127,6 +131,21 @@ class Player():
         dy += self.vel_y #more the player jumps, dy changes
 
         #checking for collisions
+        for tile in world.tile_list:
+
+            #checking collision in x direction
+            if tile[1].colliderect(self.rect.x +dx,self.rect.y,self.width,self.height): #basically we are checking if the player's rectangle (tile[1]) is colliding with any of the tile rectangles.The tile rectangles that the player WILL HIT are specified by giving the x and y co ordinates along with the height and width of that rectangle
+                dx = 0
+
+            #checking collision in y direction
+            if tile[1].colliderect(self.rect.x, self.rect.y+dy,self.width,self.height):
+                if self.vel_y < 0: #checking  for collision below i.e, jumping
+                    dy = tile[1].bottom - self.rect.top
+                    self.vel_y = 0
+                elif self.vel_y >= 0: #checking for collision above i.e, falling
+                    dy = tile[1].top - self.rect.bottom
+                    self.vel_y = 0
+         
 
         #updating player co ordinates based on their movement 
         self.rect.x += dx
