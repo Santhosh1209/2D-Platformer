@@ -91,10 +91,10 @@ class Player():
         
         #getting keypresses
         key = pygame.key.get_pressed() #setting up connection with the keyboard
-        if key[pygame.K_SPACE] == True and self.jumped == False:
+        if key[pygame.K_UP] == True and self.jumped == False:
             self.jumped = True
             self.vel_y = -10 #-ve indicates that the characater would go UP the screen (y co ordinate)
-        if key[pygame.K_SPACE] == False:
+        if key[pygame.K_UP] == False:
             self.jumped = False
         if key[pygame.K_LEFT] == True:
             dx -=5 #moves left, 5 pixels at a time
@@ -190,12 +190,12 @@ player = Player(100,screen_height-65)
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
 
-    clock.tick(fps) # fixing the frame rate so it runs the same on all devices
+    clock.tick(fps) #fixing the frame rate so it runs the same on all devices
 
-    # blit functions are used to display image files onto the screen
-    # syntax : image,(x,y) -> x and y co ordinates
+    #blit functions are used to display image files onto the screen
+    #syntax : image,(x,y) -> x and y co ordinates
     screen.blit(bg_img,(0,0)) # fills entire screen
-    screen.blit(sun_img,(100,100)) # top left
+    screen.blit(sun_img,(50,50)) # top left
     world.draw()
     player.update()
 
