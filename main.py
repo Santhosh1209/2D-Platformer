@@ -1,10 +1,11 @@
 import pygame
 from pygame.locals import *
 
+pygame.init() #initialising pygame
+
 clock = pygame.time.Clock()
 fps = 60
 
-pygame.init() #initialising pygame
 screen_height = 500
 screen_width =  500
 
@@ -17,47 +18,6 @@ tile_size = 25
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
 bg_img = pygame.image.load('img/sky.png')
-
-
-class World():
-    def __init__(self,data): #constructor that takes the list as input 
-        #based on the value present in the list, each tile is filled with the appropriate image
-        #data -> world data ultra list
-
-        self.tile_list=[]
-
-        #images
-        dirt_img = pygame.image.load('img/dirt.png')
-        grass_img = pygame.image.load('img/grass.png')
-
-        row_count = 0
-        for row in data:
-            column_count = 0
-            for tile in row:
-                if tile == 1:
-                    #this is used to make the pic fit into the tile space
-                    img = pygame.transform.scale(dirt_img,(tile_size,tile_size)) #here tile_size = x and y axis
-                    img_rect = img.get_rect() #creates a rectangle for every image based on it's size
-                    img_rect.x = column_count * tile_size
-                    img_rect.y = row_count * tile_size
-                    tile = (img,img_rect)
-                    self.tile_list.append(tile) #self.tile is a list and all the selected stuff, here that is the values which equal to 1, are appended to it
-
-                if tile == 2:
-                    img = pygame.transform.scale(grass_img,(tile_size,tile_size)) 
-                    img_rect = img.get_rect()
-                    img_rect.x = column_count * tile_size
-                    img_rect.y = row_count * tile_size
-                    tile = (img,img_rect)
-                    self.tile_list.append(tile)
-
-                column_count+=1
-            row_count+=1
-            
-    def draw(self):
-        for tile in self.tile_list:
-            screen.blit(tile[0],tile[1])
-            pygame.draw.rect(screen,(255,255,255),tile[1],2) #displays all the rectangles with white colour (255,255,255) and thickness of 2
 
 
 class Player():
@@ -93,7 +53,7 @@ class Player():
         key = pygame.key.get_pressed() #setting up connection with the keyboard
         if key[pygame.K_UP] == True and self.jumped == False:
             self.jumped = True
-            self.vel_y = -10 #-ve indicates that the characater would go UP the screen (y co ordinate)
+            self.vel_y = -12 #-ve indicates that the characater would go UP the screen (y co ordinate)
         if key[pygame.K_UP] == False:
             self.jumped = False
         if key[pygame.K_LEFT] == True:
@@ -159,7 +119,65 @@ class Player():
         #loading player onto the screen
         screen.blit(self.image,self.rect)
 
+class World():
+    def __init__(self,data): #constructor that takes the list as input 
+        #based on the value present in the list, each tile is filled with the appropriate image
+        #data -> world data ultra list
 
+        self.tile_list=[]
+
+        #images
+        dirt_img = pygame.image.load('img/dirt.png')
+        grass_img = pygame.image.load('img/grass.png')
+
+        row_count = 0
+        for row in data:
+            column_count = 0
+            for tile in row:
+                if tile == 1:
+                    #this is used to make the pic fit into the tile space
+                    img = pygame.transform.scale(dirt_img,(tile_size,tile_size)) #here tile_size = x and y axis
+                    img_rect = img.get_rect() #creates a rectangle for every image based on it's size
+                    img_rect.x = column_count * tile_size
+                    img_rect.y = row_count * tile_size
+                    tile = (img,img_rect)
+                    self.tile_list.append(tile) #self.tile is a list and all the selected stuff, here that is the values which equal to 1, are appended to it
+                if tile == 2:
+                    img = pygame.transform.scale(grass_img,(tile_size,tile_size)) 
+                    img_rect = img.get_rect()
+                    img_rect.x = column_count * tile_size
+                    img_rect.y = row_count * tile_size
+                    tile = (img,img_rect)
+                    self.tile_list.append(tile)
+                if tile == 3:
+                    blob = Enemy(column_count * tile_size, row_count * tile_size + 10)
+                    blob_group.add(blob) #every blob occurance is added to this group
+                column_count+=1
+            row_count+=1
+            
+    def draw(self):
+        for tile in self.tile_list:
+            screen.blit(tile[0],tile[1])
+            pygame.draw.rect(screen,(255,255,255),tile[1],2) #displays all the rectangles with white colour (255,255,255) and thickness of 2
+
+#Creating an Ememy class and making it a child of the Sprite class (already present in pygame module)
+class Enemy(pygame.sprite.Sprite): 
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('img/blob.png')
+        self.image = pygame.transform.scale(self.image,(20,20))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.move_direction = 1 #to check if it should move in the left or right direction
+        self.move_counter = 0
+    
+    def update(self): #for movement of blob
+        self.rect.x += self.move_direction #movement in right direction
+        self.move_counter += 1
+        if abs(self.move_counter) > 25:
+            self.move_direction *= -1 #movement in left direction (from -25 to 24 and then the cycle repeats)
+            self.move_counter *= -1
 
 world_data = [
 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
@@ -184,8 +202,11 @@ world_data = [
 [1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ]
 
-world = World(world_data)
 player = Player(100,screen_height-65)
+
+blob_group = pygame.sprite.Group() #Groups are like lists for the Sprite class
+
+world = World(world_data)
 
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
@@ -196,7 +217,12 @@ while run == True:
     #syntax : image,(x,y) -> x and y co ordinates
     screen.blit(bg_img,(0,0)) # fills entire screen
     screen.blit(sun_img,(50,50)) # top left
+
     world.draw()
+    
+    blob_group.update()
+    blob_group.draw(screen) #sprite already has a draw method that's been defined
+
     player.update()
 
     for event in pygame.event.get():
