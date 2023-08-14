@@ -1,15 +1,18 @@
 import pygame
 from pygame.locals import *
 
+clock = pygame.time.Clock()
+fps = 60
+
 pygame.init() #initialising pygame
-screen_height = 1000
-screen_width =  1000
+screen_height = 500
+screen_width =  500
 
 screen = pygame.display.set_mode((screen_width,screen_height)) #displays blank pygame screen
 pygame.display.set_caption("2D Platformer")
 
 #defining game variables
-tile_size = 50
+tile_size = 25
 
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
@@ -57,32 +60,66 @@ class World():
 
 class Player():
     def __init__(self,x,y):
-        img = pygame.image.load('img/guy1.png')
-        self.image = pygame.transform.scale(img,(40,80))
+        self.images_right=[]
+        self.images_left=[]
+        self.index = 0
+        self.counter = 0 #used to control the animation speed as we can't control the loop's iteration speed
+        for num in range (1,5):
+            img_right = pygame.image.load(f'img/guy{num}.png') #loops b/w images guy1 -> guy4, hence forming an animation
+            img_right = pygame.transform.scale(img_right,(20,40))
+            img_left = pygame.transform.flip(img_right, True, False)
+            self.images_right.append(img_right) #adds all right images onto the list
+            self.images_left.append(img_left) #adds all left images onto the list
+        self.image = self.images_right[self.index] #first, gets the list's first element. Then, it gets all the elements based on the index
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.vel_y = 0 #velocity of jumping in y direction 
         self.jumped = False
+        self.direction = 0 #used to check if the player faces left/right 
     
     def update(self):
         
         #dy and dx denote the changes in the x and y co ordinates 
         dx = 0
         dy = 0
+        walk_cooldown = 5
         
         #getting keypresses
         key = pygame.key.get_pressed() #setting up connection with the keyboard
         if key[pygame.K_SPACE] == True and self.jumped == False:
             self.jumped = True
-            self.vel_y = -15 #-ve indicates that the characater would go UP the screen (y co ordinate)
+            self.vel_y = -10 #-ve indicates that the characater would go UP the screen (y co ordinate)
         if key[pygame.K_SPACE] == False:
             self.jumped = False
         if key[pygame.K_LEFT] == True:
             dx -=5 #moves left, 5 pixels at a time
+            self.counter +=1
+            self.direction = -1
         if key[pygame.K_RIGHT] == True:
             dx +=5 #moves right, 5 pixels at a time
-        
+            self.counter +=1
+            self.direction = 1
+        if key[pygame.K_LEFT] == False and key[pygame.K_RIGHT] == False:
+            self.index = 0
+            self.counter = 0
+            #based on if the player is facing left or right, self.direction is updated and so, the subsequent still image is used 
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+
+        #adding animation
+        if self.counter > walk_cooldown:
+            self.counter = 0
+            self.index +=1
+            if self.index >= len(self.images_right):
+                self.index = 0
+            if self.direction == 1:
+                self.image = self.images_right[self.index]
+            if self.direction == -1:
+                self.image = self.images_left[self.index]
+
         #setting up the jumping limit -> adding gravity
         self.vel_y +=1
         if self.vel_y > 10:
@@ -129,10 +166,12 @@ world_data = [
 ]
 
 world = World(world_data)
-player = Player(100,screen_height-130)
+player = Player(100,screen_height-65)
 
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
+
+    clock.tick(fps) # fixing the frame rate so it runs the same on all devices
 
     # blit functions are used to display image files onto the screen
     # syntax : image,(x,y) -> x and y co ordinates
