@@ -19,31 +19,46 @@ game_over = 0 #change this based on the events that take place in the game
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
 bg_img = pygame.image.load('img/sky.png')
+restart_img = pygame.image.load('img/restart_btn.png')
+start_img = pygame.image.load('img/start_btn.png')
+exit_img = pygame.image.load('img/exit_btn.png')
+
+class Button(): #for adding all kinds of buttons
+
+    #creates a restart button
+    def __init__(self,x,y,image): #self represents a class's instance and is required to access any variables or methods within the class
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.clicked = False
+
+    def draw(self):
+        action = False
+        #geting mouse position
+        pos = pygame.mouse.get_pos()
+
+        #check mousover and clicking conditions
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False: 
+                #Based on the no specified inside the square brackets, we can deteck clicks
+                # [0] -> left click
+                # [1] -> right click
+                action = True
+                self.clicked = True
+
+        if pygame.mouse.get_pressed()[0] == 0: #user has released the left key after previously clicking it 
+            self.clicked = False
+
+
+        #draws restart button onto the screen (when the player is dead)
+        screen.blit(self.image,self.rect)
+        return action
 
 
 class Player():
     def __init__(self,x,y):
-        self.images_right=[]
-        self.images_left=[]
-        self.index = 0
-        self.counter = 0 #used to control the animation speed as we can't control the loop's iteration speed
-        for num in range (1,5):
-            img_right = pygame.image.load(f'img/guy{num}.png') #loops b/w images guy1 -> guy4, hence forming an animation
-            img_right = pygame.transform.scale(img_right,(20,40))
-            img_left = pygame.transform.flip(img_right, True, False)
-            self.images_right.append(img_right) #adds all right images onto the list
-            self.images_left.append(img_left) #adds all left images onto the list
-        self.dead_image = pygame.image.load('img/ghost.png')
-        self.dead_image = pygame.transform.scale(self.dead_image,(30,30))
-        self.image = self.images_right[self.index] #first, gets the list's first element. Then, it gets all the elements based on the index
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.vel_y = 0 #velocity of jumping in y direction 
-        self.jumped = False
-        self.direction = 0 #used to check if the player faces left/right 
+        self.reset(x,y) #everytime the player class is used, init function is called and this contains the reset function
     
     def update(self,game_over):
         
@@ -55,7 +70,7 @@ class Player():
         if game_over == 0:
             #getting keypresses
             key = pygame.key.get_pressed() #setting up connection with the keyboard
-            if key[pygame.K_UP] == True and self.jumped == False:
+            if key[pygame.K_UP] == True and self.jumped == False and self.in_air == False:
                 self.jumped = True
                 self.vel_y = -12 #-ve indicates that the characater would go UP the screen (y co ordinate)
             if key[pygame.K_UP] == False:
@@ -95,8 +110,8 @@ class Player():
             dy += self.vel_y #more the player jumps, dy changes
 
             #checking for collisions with tiles
+            self.in_air = True
             for tile in world.tile_list:
-
             #checking collision in x direction
                 if tile[1].colliderect(self.rect.x +dx,self.rect.y,self.width,self.height): #basically we are checking if the player's rectangle (tile[1]) is colliding with any of the tile rectangles.The tile rectangles that the player WILL HIT are specified by giving the x and y co ordinates along with the height and width of that rectangle
                     dx = 0
@@ -109,6 +124,7 @@ class Player():
                     elif self.vel_y >= 0: #checking for collision above i.e, falling
                         dy = tile[1].top - self.rect.bottom
                         self.vel_y = 0
+                        self.in_air = False #i.e., he has hit a tile
         
         #checking for collisions with enemies
             if pygame.sprite.spritecollide(self,blob_group,False):
@@ -129,6 +145,30 @@ class Player():
         screen.blit(self.image,self.rect)
 
         return game_over
+    
+    def reset(self,x,y):
+        self.images_right=[]
+        self.images_left=[]
+        self.index = 0
+        self.counter = 0 #used to control the animation speed as we can't control the loop's iteration speed
+        for num in range (1,5):
+            img_right = pygame.image.load(f'img/guy{num}.png') #loops b/w images guy1 -> guy4, hence forming an animation
+            img_right = pygame.transform.scale(img_right,(20,40))
+            img_left = pygame.transform.flip(img_right, True, False)
+            self.images_right.append(img_right) #adds all right images onto the list
+            self.images_left.append(img_left) #adds all left images onto the list
+        self.dead_image = pygame.image.load('img/ghost.png')
+        self.dead_image = pygame.transform.scale(self.dead_image,(30,30))
+        self.image = self.images_right[self.index] #first, gets the list's first element. Then, it gets all the elements based on the index
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.vel_y = 0 #velocity of jumping in y direction 
+        self.jumped = False
+        self.direction = 0 #used to check if the player faces left/right
+        self.in_air = True #used to check if the user is touching a tile or he's still mid air
 
 class World():
     def __init__(self,data): #constructor that takes the list as input 
@@ -232,10 +272,13 @@ world_data = [
 player = Player(100,screen_height-65)
 
 blob_group = pygame.sprite.Group() #Groups are like lists for the Sprite class
-
 lava_group = pygame.sprite.Group()
 
 world = World(world_data)
+#buttons
+restart_button = Button(screen_width//2 - 25,screen_height//2 +50, restart_img)
+start_button = Button(screen_width//2 - 175,screen_height//2 +50, start_img)
+exit_button = Button(screen_width//2 + 75,screen_height//2 +50, exit_img)
 
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
@@ -247,6 +290,9 @@ while run == True:
     screen.blit(bg_img,(0,0)) # fills entire screen
     screen.blit(sun_img,(50,50)) # top left
 
+    exit_button.draw()
+    start_button.draw()
+
     world.draw()
 
     if game_over == 0:
@@ -256,6 +302,11 @@ while run == True:
     lava_group.draw(screen)
 
     game_over = player.update(game_over) #once game_over is -1, the game halts
+
+    if game_over == -1: #player has died
+        if restart_button.draw():
+            player.reset(100,screen_height-65)
+            game_over = 0
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
