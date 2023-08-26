@@ -15,13 +15,16 @@ pygame.display.set_caption("2D Platformer")
 #defining game variables
 tile_size = 25
 game_over = 0 #change this based on the events that take place in the game
+main_menu = True
 
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
 bg_img = pygame.image.load('img/sky.png')
 restart_img = pygame.image.load('img/restart_btn.png')
 start_img = pygame.image.load('img/start_btn.png')
+start_img = pygame.transform.scale(start_img, (150,100))
 exit_img = pygame.image.load('img/exit_btn.png')
+exit_img = pygame.transform.scale(exit_img, (150,100))
 
 class Button(): #for adding all kinds of buttons
 
@@ -277,8 +280,8 @@ lava_group = pygame.sprite.Group()
 world = World(world_data)
 #buttons
 restart_button = Button(screen_width//2 - 25,screen_height//2 +50, restart_img)
-start_button = Button(screen_width//2 - 175,screen_height//2 +50, start_img)
-exit_button = Button(screen_width//2 + 75,screen_height//2 +50, exit_img)
+start_button = Button(screen_width//2 - 175, screen_height//2, start_img)
+exit_button = Button(screen_width//2 + 50,screen_height//2, exit_img)
 
 run = True #acts as the controller to keep the make the screen visible at all times 
 while run == True:
@@ -290,23 +293,25 @@ while run == True:
     screen.blit(bg_img,(0,0)) # fills entire screen
     screen.blit(sun_img,(50,50)) # top left
 
-    exit_button.draw()
-    start_button.draw()
+    if main_menu == True:
+        if exit_button.draw() == True:
+            run = False
+        if start_button.draw() == True:
+            main_menu = False
+    else:
+        world.draw()
+        if game_over == 0:
+            blob_group.update() #this way, the blobs stop moving when game_over != 0
 
-    world.draw()
+        blob_group.draw(screen) #sprite already has a draw method that's been definedd
+        lava_group.draw(screen)
 
-    if game_over == 0:
-        blob_group.update() #this way, the blobs stop moving when game_over != 0
+        game_over = player.update(game_over) #once game_over is -1, the game halts
 
-    blob_group.draw(screen) #sprite already has a draw method that's been definedd
-    lava_group.draw(screen)
-
-    game_over = player.update(game_over) #once game_over is -1, the game halts
-
-    if game_over == -1: #player has died
-        if restart_button.draw():
-            player.reset(100,screen_height-65)
-            game_over = 0
+        if game_over == -1: #player has died
+            if restart_button.draw():
+                player.reset(100,screen_height-65)
+                game_over = 0
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
