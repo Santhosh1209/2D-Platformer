@@ -1,6 +1,8 @@
 import pygame
 from pygame.locals import *
 import pickle
+from os import path
+
 
 pygame.init() #initialising pygame
 
@@ -17,6 +19,8 @@ pygame.display.set_caption("2D Platformer")
 tile_size = 25
 game_over = 0 #change this based on the events that take place in the game
 main_menu = True
+level = 1
+max_levels = 7
 
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
@@ -27,9 +31,21 @@ start_img = pygame.transform.scale(start_img, (150,100))
 exit_img = pygame.image.load('img/exit_btn.png')
 exit_img = pygame.transform.scale(exit_img, (150,100))
 
-class Button(): #for adding all kinds of buttons
+def reset_level(level):
+    player.reset(100,screen_height-65)
+    blob_group.empty()
+    lava_group.empty()
+    exit_group.empty()
 
-    #creates a restart button
+    #loading level data and creating world
+    if path.exists(f'level{level}_data'):
+        pickle_in = open(f'level{level}_data','rb')
+        world_data = pickle.load(pickle_in)
+        world = World(world_data)
+
+    return world
+
+class Button(): #for adding all kinds of buttons
     def __init__(self,x,y,image): #self represents a class's instance and is required to access any variables or methods within the class
         self.image = image
         self.rect = self.image.get_rect()
@@ -133,8 +149,12 @@ class Player():
         #checking for collisions with enemies
             if pygame.sprite.spritecollide(self,blob_group,False):
                game_over = -1
+        #checking for collision with lava
             if pygame.sprite.spritecollide(self,lava_group,False):
                game_over = -1
+        #checking for collision with exit
+            if pygame.sprite.spritecollide(self,exit_group,False):
+               game_over = 1
         
         #updating player co ordinates based on their movement 
             self.rect.x += dx
@@ -210,6 +230,9 @@ class World():
                 if tile == 6:
                     lava = Lava(column_count * tile_size, row_count * tile_size + (tile_size // 2))
                     lava_group.add(lava)
+                if tile == 8:
+                    exit = Exit(column_count * tile_size, row_count * tile_size - (tile_size // 2))
+                    exit_group.add(exit)
                 column_count+=1
             row_count+=1
             
@@ -249,16 +272,29 @@ class Lava(pygame.sprite.Sprite):
         self.move_direction = 1 #to check if it should move in the left or right direction
         self.move_counter = 0
 
+class Exit(pygame.sprite.Sprite): 
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        img = pygame.image.load('img/exit.png')
+        self.image = pygame.transform.scale(img,(tile_size,tile_size * 1.5))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.move_direction = 1 #to check if it should move in the left or right direction
+        self.move_counter = 0
+
 
 player = Player(100,screen_height-65)
 
 blob_group = pygame.sprite.Group() #Groups are like lists for the Sprite class
 lava_group = pygame.sprite.Group()
+exit_group = pygame.sprite.Group()
 
 #loading level data to create world
-pickle_in = open('level1_data','rb')
-world_data = pickle.load(pickle_in)
-world = World(world_data)
+if path.exists(f'level{level}_data'):
+    pickle_in = open(f'level{level}_data','rb')
+    world_data = pickle.load(pickle_in)
+    world = World(world_data)
 
 #buttons
 restart_button = Button(screen_width//2 - 25,screen_height//2 +50, restart_img)
@@ -285,15 +321,31 @@ while run == True:
         if game_over == 0:
             blob_group.update() #this way, the blobs stop moving when game_over != 0
 
-        blob_group.draw(screen) #sprite already has a draw method that's been definedd
+        blob_group.draw(screen) #sprite already has a draw method that's been pre definedd
         lava_group.draw(screen)
+        exit_group.draw(screen)
 
         game_over = player.update(game_over) #once game_over is -1, the game halts
 
         if game_over == -1: #player has died
             if restart_button.draw():
-                player.reset(100,screen_height-65)
+                world_data = []
+                world = reset_level(level)
                 game_over = 0
+
+        if game_over == 1:#played has completed that level
+            level+=1
+            if level <= max_levels:
+                #reset level
+                world_data = []
+                world = reset_level(level)
+                game_over = 0
+            else:
+                if restart_button.draw():
+                    level = 1
+                    world_data = []
+                    world = reset_level(level)
+                    game_over = 0
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
