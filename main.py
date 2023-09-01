@@ -1,9 +1,11 @@
 import pygame
 from pygame.locals import *
+from pygame import mixer #for adding sounds to the game
 import pickle
 from os import path
 
-
+pygame.mixer.pre_init(44120,-16,2,512) #making the music smooth
+mixer.init() 
 pygame.init() #initialising pygame
 
 clock = pygame.time.Clock()
@@ -39,6 +41,16 @@ start_img = pygame.image.load('img/start_btn.png')
 start_img = pygame.transform.scale(start_img, (150,100))
 exit_img = pygame.image.load('img/exit_btn.png')
 exit_img = pygame.transform.scale(exit_img, (150,100))
+
+#loading sounds
+pygame.mixer.music.load('img/music.wav')
+pygame.mixer.music.play(-1,0.0,5000) #5000 ->delay time (for fading)
+coin_fx = pygame.mixer.Sound('img/coin.wav')
+coin_fx.set_volume(0.4) #setting it to 40% volume
+jump_fx = pygame.mixer.Sound('img/jump.wav')
+jump_fx.set_volume(0.4) 
+game_over_fx = pygame.mixer.Sound('img/game_over.wav')
+game_over_fx.set_volume(0.4) 
 
 def draw_text(text,font,text_col,x,y):
     img = font.render(text,True,text_col)
@@ -104,6 +116,7 @@ class Player():
             #getting keypresses
             key = pygame.key.get_pressed() #setting up connection with the keyboard
             if key[pygame.K_UP] == True and self.jumped == False and self.in_air == False:
+                jump_fx.play()
                 self.jumped = True
                 self.vel_y = -12 #-ve indicates that the characater would go UP the screen (y co ordinate)
             if key[pygame.K_UP] == False:
@@ -162,13 +175,15 @@ class Player():
         #checking for collisions with enemies
             if pygame.sprite.spritecollide(self,blob_group,False):
                game_over = -1
+               game_over_fx.play()
         #checking for collision with lava
             if pygame.sprite.spritecollide(self,lava_group,False):
                game_over = -1
+               game_over_fx.play()
         #checking for collision with exit
             if pygame.sprite.spritecollide(self,exit_group,False):
                game_over = 1
-        
+
         #updating player co ordinates based on their movement 
             self.rect.x += dx
             self.rect.y += dy
@@ -352,6 +367,7 @@ while run == True:
             #update score
             #checking if the coins are being collected
             if pygame.sprite.spritecollide(player,coin_group,True): #True -> collided items get deleted off the screen, in this case that is coins
+                coin_fx.play()
                 score+=1
             draw_text('XXX ' + str(score),font_score,white, tile_size +5,5)
 
