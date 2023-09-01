@@ -16,6 +16,7 @@ screen = pygame.display.set_mode((screen_width,screen_height)) #displays blank p
 pygame.display.set_caption("2D Platformer")
 
 #defining font
+font = pygame.font.SysFont('Bauhaus 93',35)
 font_score = pygame.font.SysFont('Bauhaus 93',15)
 
 #defining game variables
@@ -23,11 +24,12 @@ tile_size = 25
 game_over = 0 #change this based on the events that take place in the game
 main_menu = True
 level = 1
-max_levels = 7
+max_levels = 1
 score = 0
 
 #defining colours
 white = (255,255,255)
+blue = (0,0,255)
 
 #loading images before entering the screen
 sun_img = pygame.image.load('img/sun.png')
@@ -173,6 +175,7 @@ class Player():
 
         elif (game_over == -1):
             self.image = self.dead_image
+            draw_text('GAME OVER!',font,blue,(screen_width//2 - 60),screen_height//2)
             if self.rect.y > 200 :
                 self.rect.y -= 5
 
@@ -374,6 +377,7 @@ while run == True:
                 world = reset_level(level)
                 game_over = 0
             else:
+                draw_text('YOU WIN!',font,blue,(screen_width // 2) - 40, (screen_height // 2))
                 if restart_button.draw():
                     level = 1
                     world_data = []
