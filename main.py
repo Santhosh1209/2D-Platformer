@@ -25,7 +25,7 @@ font_score = pygame.font.SysFont('Bauhaus 93',15)
 tile_size = 25
 game_over = 0 #change this based on the events that take place in the game
 main_menu = True
-level = 7
+level = 1
 max_levels = 7
 score = 0
 
