@@ -26,7 +26,7 @@ tile_size = 25
 game_over = 0 #change this based on the events that take place in the game
 main_menu = True
 level = 1
-max_levels = 1
+max_levels = 7
 score = 0
 
 #defining colours
@@ -183,6 +183,9 @@ class Player():
         #checking for collision with exit
             if pygame.sprite.spritecollide(self,exit_group,False):
                game_over = 1
+        # #checking for collision with platforms
+        #     for platform in platform_group:
+
 
         #updating player co ordinates based on their movement 
             self.rect.x += dx
@@ -256,6 +259,12 @@ class World():
                 if tile == 3:
                     blob = Enemy(column_count * tile_size, row_count * tile_size + 10)
                     blob_group.add(blob) #every blob occurance is added to this group
+                if tile == 4:
+                    platform = Platform(column_count * tile_size, row_count * tile_size, 1, 0)
+                    platform_group.add(platform)
+                if tile == 5:
+                    platform = Platform(column_count * tile_size, row_count * tile_size, 0, 1)
+                    platform_group.add(platform)
                 if tile == 6:
                     lava = Lava(column_count * tile_size, row_count * tile_size + (tile_size // 2))
                     lava_group.add(lava)
@@ -292,6 +301,26 @@ class Enemy(pygame.sprite.Sprite):
             self.move_direction *= -1 #movement in left direction (from -25 to 24 and then the cycle repeats)
             self.move_counter *= -1
 
+class Platform(pygame.sprite.Sprite): 
+    def __init__(self, x, y, move_x, move_y):
+        pygame.sprite.Sprite.__init__(self)
+        img = pygame.image.load('img/platform.png')
+        self.image = pygame.transform.scale(img,(tile_size,tile_size // 2))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.move_counter = 0
+        self.move_direction = 1
+        self.move_x = move_x
+        self.move_y = move_y
+
+    def update(self): #for movement of platforms
+        self.rect.x += self.move_direction * self.move_x
+        self.rect.y += self.move_direction * self.move_y       
+        self.move_counter += 1
+        if abs(self.move_counter) > 25:
+            self.move_direction *= -1
+            self.move_counter *= -1
 
 class Lava(pygame.sprite.Sprite): 
     def __init__(self, x, y):
@@ -325,6 +354,7 @@ class Exit(pygame.sprite.Sprite):
 player = Player(100,screen_height-65)
 
 blob_group = pygame.sprite.Group() #Groups are like lists for the Sprite class
+platform_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
@@ -363,7 +393,7 @@ while run == True:
         world.draw()
         if game_over == 0:
             blob_group.update() #this way, the blobs stop moving when game_over != 0
-
+            platform_group.update()
             #update score
             #checking if the coins are being collected
             if pygame.sprite.spritecollide(player,coin_group,True): #True -> collided items get deleted off the screen, in this case that is coins
@@ -371,7 +401,8 @@ while run == True:
                 score+=1
             draw_text('XXX ' + str(score),font_score,white, tile_size +5,5)
 
-        blob_group.draw(screen) #sprite already has a draw method that's been pre definedd
+        blob_group.draw(screen) #sprite already has a draw method that's been pre defined
+        platform_group.draw(screen)
         lava_group.draw(screen)
         coin_group.draw(screen)
         exit_group.draw(screen)
